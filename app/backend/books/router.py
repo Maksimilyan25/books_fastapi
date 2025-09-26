@@ -2,9 +2,10 @@ from uuid import UUID
 from decimal import Decimal
 
 from fastapi import APIRouter, Query
+from fastapi import HTTPException, status
 
-from backend.database.db import SessionDep
-from .schemas import BooksListResponse
+from app.backend.database.db import SessionDep
+from .schemas import BooksListResponse, BookResponse, BookCreate, BookUpdate
 from .service import BookService
 
 router = APIRouter(prefix='/books')
@@ -73,3 +74,88 @@ async def get_books(
         rating_min=rating_min,
         rating_max=rating_max,
     )
+
+
+@router.get('/{book_id}', response_model=BookResponse)
+async def get_book(book_id: UUID, session: SessionDep):
+    """
+    Получить книгу по ID с информацией о жанрах и участниках.
+
+    Args:
+        book_id: ID книги
+        session: Сессия базы данных
+
+    Returns:
+        BookResponse: Данные книги с жанрами и участниками
+    """
+    service = BookService(session)
+    book = await service.get_book_by_id(book_id)
+    if not book:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Книга не найдена"
+        )
+    return book
+
+
+@router.post(
+    '/',
+    response_model=BookResponse,
+    status_code=status.HTTP_201_CREATED
+)
+async def create_book(book_data: BookCreate, session: SessionDep):
+    """
+    Создать новую книгу.
+
+    Args:
+        book_data: Данные для создания книги
+        session: Сессия базы данных
+
+    Returns:
+        BookResponse: Созданная книга
+    """
+    service = BookService(session)
+    return await service.create_book(book_data)
+
+
+@router.patch('/{book_id}', response_model=BookResponse)
+async def update_book(
+    book_id: UUID, book_data: BookUpdate, session: SessionDep
+):
+    """
+    Обновить существующую книгу.
+
+    Args:
+        book_id: ID книги
+        book_data: Данные для обновления
+        session: Сессия базы данных
+
+    Returns:
+        BookResponse: Обновленная книга
+    """
+    service = BookService(session)
+    book = await service.update_book(book_id, book_data)
+    if not book:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Книга не найдена"
+        )
+    return book
+
+
+@router.delete('/{book_id}', status_code=status.HTTP_204_NO_CONTENT)
+async def delete_book(book_id: UUID, session: SessionDep):
+    """
+    Удалить книгу.
+
+    Args:
+        book_id: ID книги
+        session: Сессия базы данных
+    """
+    service = BookService(session)
+    deleted = await service.delete_book(book_id)
+    if not deleted:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Книга не найдена"
+        )

@@ -2,6 +2,22 @@ from typing import Optional, List
 from pydantic import BaseModel, Field
 from decimal import Decimal
 from uuid import UUID
+from .models import Role
+
+
+class GenreResponse(BaseModel):
+    id: UUID
+    name: str
+
+
+class ContributorResponse(BaseModel):
+    id: UUID
+    full_name: str
+
+
+class BookContributorResponse(BaseModel):
+    contributor: ContributorResponse
+    role: Role
 
 
 class BookResponse(BaseModel):
@@ -10,6 +26,8 @@ class BookResponse(BaseModel):
     rating: Optional[Decimal] = None
     description: Optional[str] = None
     published_year: Optional[int] = None
+    genres: List[GenreResponse] = []
+    contributors: List[BookContributorResponse] = []
 
 
 class BooksListResponse(BaseModel):
@@ -48,4 +66,58 @@ class BooksQueryParams(BaseModel):
     )
     rating_max: Optional[Decimal] = Field(
         default=None, ge=0, le=99.9, description='Максимальный рейтинг'
+    )
+
+
+class ContributorCreate(BaseModel):
+    contributor_id: UUID
+    role: Role
+
+
+class BookCreate(BaseModel):
+    title: str = Field(..., min_length=1, max_length=255)
+    rating: Optional[Decimal] = Field(None, ge=0, le=99.9)
+    description: Optional[str] = Field(None, max_length=1000)
+    published_year: Optional[int] = Field(None, ge=1800, le=2100)
+    genre_ids: List[UUID] = []
+    contributors: List[ContributorCreate] = []
+
+
+class BookUpdate(BaseModel):
+    title: Optional[str] = Field(None, min_length=1, max_length=255)
+    rating: Optional[Decimal] = Field(None, ge=0, le=99.9)
+    description: Optional[str] = Field(None, max_length=1000)
+    published_year: Optional[int] = Field(None, ge=1800, le=2100)
+    genre_ids: Optional[List[UUID]] = None
+    contributors: Optional[List[ContributorCreate]] = None
+
+
+class GenreCreate(BaseModel):
+    name: str = Field(
+        ..., min_length=1, max_length=100, description="Название жанра"
+    )
+
+
+class GenreUpdate(BaseModel):
+    name: Optional[str] = Field(
+        None, min_length=1, max_length=100, description="Название жанра"
+    )
+
+
+class GenresListResponse(BaseModel):
+    items: List[GenreResponse]
+    total: int
+    page: int
+    page_size: int
+
+
+class GenresQueryParams(BaseModel):
+    page: int = Field(
+        ge=1, default=1, description='Номер страницы (начиная с 1)'
+    )
+    page_size: int = Field(
+        ge=1, le=100, default=10, description='Размер страницы (от 1 до 100)'
+    )
+    q: Optional[str] = Field(
+        default=None, description='Поиск по подстроке в названии'
     )

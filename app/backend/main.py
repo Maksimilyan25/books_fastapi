@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 
-from backend.books.router import router as books_router
+from app.backend.books.router import router as books_router
+from app.backend.books.genres_router import router as genres_router
 
 
 app = FastAPI(title='BD for books')
@@ -17,3 +18,4 @@ async def healthcheck():
 
 
 app.include_router(books_router, prefix='/api/v1')
+app.include_router(genres_router, prefix='/api/v1')

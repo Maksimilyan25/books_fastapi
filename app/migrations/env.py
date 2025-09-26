@@ -1,4 +1,6 @@
 import asyncio
+import os
+import logging
 from logging.config import fileConfig
 
 from sqlalchemy import pool
@@ -6,6 +8,32 @@ from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from alembic import context
+
+# Импортируем все модели, чтобы Alembic мог их обнаружить
+from app.backend.database.db import Base
+from app.backend.books.models import Book, Genre, Contributor, \
+    BookContributor, BookGenre
+
+# Добавляем загрузку переменных окружения
+from dotenv import load_dotenv
+
+# Настройка логирования
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Загружаем переменные окружения из файла .env
+env_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), '.env')
+logger.info(f"Попытка загрузить .env из: {env_path}")
+load_dotenv(env_path)
+
+# Логируем DATABASE_URL для отладки
+database_url = os.getenv('DATABASE_URL')
+logger.info(f"DATABASE_URL из переменной окружения: {database_url}")
+
+# this is the Alembic Config object, which provides
+# access to the values within the .ini file in use.
+config = context.config
+
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -20,7 +48,7 @@ if config.config_file_name is not None:
 # for 'autogenerate' support
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
-target_metadata = None
+target_metadata = Base.metadata
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
@@ -40,7 +68,8 @@ def run_migrations_offline() -> None:
     script output.
 
     """
-    url = config.get_main_option("sqlalchemy.url")
+    # Получаем URL из переменной окружения, если она доступна
+    url = os.getenv('DATABASE_URL') or config.get_main_option("sqlalchemy.url")
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -65,11 +94,24 @@ async def run_async_migrations() -> None:
 
     """
 
-    connectable = async_engine_from_config(
-        config.get_section(config.config_ini_section, {}),
-        prefix="sqlalchemy.",
-        poolclass=pool.NullPool,
-    )
+    # Получаем URL из переменной окружения, если она доступна
+    database_url = os.getenv('DATABASE_URL')
+    if database_url:
+        # Используем URL из переменной окружения
+        configuration = config.get_section(config.config_ini_section, {})
+        configuration['sqlalchemy.url'] = database_url
+        connectable = async_engine_from_config(
+            configuration,
+            prefix="sqlalchemy.",
+            poolclass=pool.NullPool,
+        )
+    else:
+        # Используем URL из конфигурационного файла
+        connectable = async_engine_from_config(
+            config.get_section(config.config_ini_section, {}),
+            prefix="sqlalchemy.",
+            poolclass=pool.NullPool,
+        )
 
     async with connectable.connect() as connection:
         await connection.run_sync(do_run_migrations)

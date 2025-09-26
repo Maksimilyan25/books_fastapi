@@ -5,7 +5,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from uuid import UUID, uuid4
 import enum
 
-from backend.database.db import Base
+from app.backend.database.db import Base
 
 
 class Role(enum.Enum):
