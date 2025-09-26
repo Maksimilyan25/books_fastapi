@@ -44,13 +44,6 @@ class Book(Base, TimestampMixin):
     published_year: Mapped[int] = mapped_column(Integer, nullable=True)
 
 
-class Genre(Base, TimestampMixin):
-    __tablename__ = 'genres'
-
-    id: Mapped[UUID] = mapped_column(Uuid, primary_key=True, default=uuid4)
-    name: Mapped[str] = mapped_column(String, unique=True, nullable=False)
-
-
 class Contributor(Base, TimestampMixin):
     __tablename__ = 'contributors'
 

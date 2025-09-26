@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 
 from app.backend.books.router import router as books_router
-from app.backend.books.genres_router import router as genres_router
+from app.backend.genre.router import router as genres_router
 
 
 app = FastAPI(title='BD for books')

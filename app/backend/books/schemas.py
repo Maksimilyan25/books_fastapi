@@ -3,11 +3,7 @@ from pydantic import BaseModel, Field
 from decimal import Decimal
 from uuid import UUID
 from .models import Role
-
-
-class GenreResponse(BaseModel):
-    id: UUID
-    name: str
+from app.backend.genre.schemas import GenreResponse
 
 
 class ContributorResponse(BaseModel):
@@ -90,34 +86,3 @@ class BookUpdate(BaseModel):
     published_year: Optional[int] = Field(None, ge=1800, le=2100)
     genre_ids: Optional[List[UUID]] = None
     contributors: Optional[List[ContributorCreate]] = None
-
-
-class GenreCreate(BaseModel):
-    name: str = Field(
-        ..., min_length=1, max_length=100, description="Название жанра"
-    )
-
-
-class GenreUpdate(BaseModel):
-    name: Optional[str] = Field(
-        None, min_length=1, max_length=100, description="Название жанра"
-    )
-
-
-class GenresListResponse(BaseModel):
-    items: List[GenreResponse]
-    total: int
-    page: int
-    page_size: int
-
-
-class GenresQueryParams(BaseModel):
-    page: int = Field(
-        ge=1, default=1, description='Номер страницы (начиная с 1)'
-    )
-    page_size: int = Field(
-        ge=1, le=100, default=10, description='Размер страницы (от 1 до 100)'
-    )
-    q: Optional[str] = Field(
-        default=None, description='Поиск по подстроке в названии'
-    )
